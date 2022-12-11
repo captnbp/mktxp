@@ -68,6 +68,7 @@ class MKTXPConfigKeys:
     MKTXP_BANDWIDTH_TEST_INTERVAL = 'bandwidth_test_interval'
     MKTXP_VERBOSE_MODE = 'verbose_mode'
     MKTXP_MIN_COLLECT_INTERVAL = 'minimal_collect_interval'
+    MKTXP_BIND = 'bind'
 
     # UnRegistered entries placeholder
     NO_ENTRIES_REGISTERED = 'NoEntriesRegistered'
@@ -82,6 +83,7 @@ class MKTXPConfigKeys:
     # Default values
     DEFAULT_API_PORT = 8728
     DEFAULT_API_SSL_PORT = 8729
+    DEFAULT_MKTXP_BIND = "0.0.0.0"
     DEFAULT_MKTXP_PORT = 49090
     DEFAULT_MKTXP_SOCKET_TIMEOUT = 2
     DEFAULT_MKTXP_INITIAL_DELAY = 120
@@ -102,6 +104,7 @@ class MKTXPConfigKeys:
     SYSTEM_BOOLEAN_KEYS_NO = {MKTXP_VERBOSE_MODE}
 
     STR_KEYS = (HOST_KEY, USER_KEY, PASSWD_KEY)
+    MKTXP_STR_KEYS = (MKTXP_BIND)
     MKTXP_INT_KEYS = (PORT_KEY, MKTXP_SOCKET_TIMEOUT, MKTXP_INITIAL_DELAY, MKTXP_MAX_DELAY, MKTXP_INC_DIV, MKTXP_BANDWIDTH_TEST_INTERVAL, MKTXP_MIN_COLLECT_INTERVAL)
 
     # MKTXP config entry nane
@@ -118,7 +121,7 @@ class ConfigEntry:
                                                  MKTXPConfigKeys.MKTXP_USE_COMMENTS_OVER_NAMES, MKTXPConfigKeys.FE_PUBLIC_IP_KEY, MKTXPConfigKeys.FE_IPV6_FIREWALL_KEY, MKTXPConfigKeys.FE_IPV6_NEIGHBOR_KEY,
                                                  MKTXPConfigKeys.FE_USER_KEY, MKTXPConfigKeys.FE_QUEUE_KEY
                                                  ])
-    MKTXPSystemEntry = namedtuple('MKTXPSystemEntry', [MKTXPConfigKeys.PORT_KEY, MKTXPConfigKeys.MKTXP_SOCKET_TIMEOUT,
+    MKTXPSystemEntry = namedtuple('MKTXPSystemEntry', [MKTXPConfigKeys.MKTXP_BIND, MKTXPConfigKeys.PORT_KEY, MKTXPConfigKeys.MKTXP_SOCKET_TIMEOUT,
                                                   MKTXPConfigKeys.MKTXP_INITIAL_DELAY, MKTXPConfigKeys.MKTXP_MAX_DELAY,
                                                   MKTXPConfigKeys.MKTXP_INC_DIV, MKTXPConfigKeys.MKTXP_BANDWIDTH_KEY, 
                                                   MKTXPConfigKeys.MKTXP_VERBOSE_MODE, MKTXPConfigKeys.MKTXP_BANDWIDTH_TEST_INTERVAL, MKTXPConfigKeys.MKTXP_MIN_COLLECT_INTERVAL])
@@ -238,11 +241,7 @@ class MKTXPConfigHandler:
             config_entry_reader[MKTXPConfigKeys.PORT_KEY] = self.config[entry_name].as_int(MKTXPConfigKeys.PORT_KEY)
         else:
             config_entry_reader[MKTXPConfigKeys.PORT_KEY] = self._default_value_for_key(MKTXPConfigKeys.SSL_KEY, config_entry_reader[MKTXPConfigKeys.SSL_KEY])
-            write_needed = True # read from disk next time                
-
-        if write_needed:
-            self.config[entry_name] = config_entry_reader
-            self.config.write()
+            write_needed = True # read from disk next time
 
         return config_entry_reader
 
@@ -250,6 +249,12 @@ class MKTXPConfigHandler:
         system_entry_reader = {}
         entry_name = MKTXPConfigKeys.MKTXP_CONFIG_ENTRY_NAME
         write_needed = False
+
+        if self._config[entry_name].get("bind"):
+            system_entry_reader["bind"] = self._config[entry_name].get("bind")
+        else:
+            system_entry_reader["bind"] = self._default_value_for_key("bind")
+            write_needed = True # read from disk next time   
 
         for key in MKTXPConfigKeys.MKTXP_INT_KEYS:
             if self._config[entry_name].get(key):
@@ -264,10 +269,6 @@ class MKTXPConfigHandler:
             else:
                 system_entry_reader[key] = True if key in MKTXPConfigKeys.SYSTEM_BOOLEAN_KEYS_YES else False
                 write_needed = True # read from disk next time                
-            
-        if write_needed:
-            self._config[entry_name] = system_entry_reader
-            self._config.write()
             
         return system_entry_reader
 

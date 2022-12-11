@@ -11,13 +11,19 @@
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-
+import signal
+import sys
 
 import subprocess
 from mktxp.cli.config.config import config_handler
 from mktxp.cli.options import MKTXPOptionsParser, MKTXPCommands
 from mktxp.flow.processor.base_proc import ExportProcessor, OutputProcessor
 
+
+def sigint_handler(signal, frame):
+    print ('KeyboardInterrupt is caught, exiting')
+    sys.exit(0)
+signal.signal(signal.SIGINT, sigint_handler)
 
 class MKTXPDispatcher:
     ''' Base MKTXP Commands Dispatcher
@@ -106,4 +112,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
